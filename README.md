@@ -43,6 +43,9 @@ Deploy Your Project to Astronomer
 If you have an Astronomer account, pushing code to a Deployment on Astronomer is simple. For deploying instructions, refer to Astronomer documentation: https://www.astronomer.io/docs/astro/deploy-code/
 
 Contact
+<img width="1275" alt="Screenshot 2024-11-30 at 22 19 30" src="https://github.com/user-attachments/assets/1d60c7bc-d47d-490b-a7e0-6c2be91d4315">
+
+
 =======
 
 The Astronomer CLI is maintained with love by the Astronomer team. To report a bug or suggest a change, reach out to our support.
