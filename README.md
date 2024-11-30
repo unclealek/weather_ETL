@@ -1,48 +1,192 @@
-Overview
-========
+# Weather ETL Pipeline
 
-Welcome to Astronomer! This project was generated after you ran 'astro dev init' using the Astronomer CLI. This readme describes the contents of the project, as well as how to run Apache Airflow on your local machine.
+A robust weather monitoring system that collects data from Open-Meteo API based on temperature changes in Kuopio, Finland. The system is orchestrated using Apache Airflow and can be deployed both locally using Astro CLI or on Kubernetes.
 
-Project Contents
-================
+## Project Overview
 
-Your Astro project contains the following files and folders:
+- **Location Monitored**: Kuopio, Finland (Lat: 62.8966, Long: 27.6786)
+- **Data Source**: Open-Meteo Weather API
+- **Trigger Condition**: Temperature change ≥ -10.0°C (detects significant cold fronts)
+- **Monitored Parameters**:
+  - Temperature
+  - Wind Speed
+  - Wind Direction
+  - Weather Code
+  - Timestamp
 
-- dags: This folder contains the Python files for your Airflow DAGs. By default, this directory includes one example DAG:
-    - `example_astronauts`: This DAG shows a simple ETL pipeline example that queries the list of astronauts currently in space from the Open Notify API and prints a statement for each astronaut. The DAG uses the TaskFlow API to define tasks in Python, and dynamic task mapping to dynamically print a statement for each astronaut. For more on how this DAG works, see our [Getting started tutorial](https://www.astronomer.io/docs/learn/get-started-with-airflow).
-- Dockerfile: This file contains a versioned Astro Runtime Docker image that provides a differentiated Airflow experience. If you want to execute other commands or overrides at runtime, specify them here.
-- include: This folder contains any additional files that you want to include as part of your project. It is empty by default.
-- packages.txt: Install OS-level packages needed for your project by adding them to this file. It is empty by default.
-- requirements.txt: Install Python packages needed for your project by adding them to this file. It is empty by default.
-- plugins: Add custom or community plugins for your project to this file. It is empty by default.
-- airflow_settings.yaml: Use this local-only file to specify Airflow Connections, Variables, and Pools instead of entering them in the Airflow UI as you develop DAGs in this project.
+## Temperature Monitoring Details
+The system is configured to detect significant temperature drops, particularly useful for:
+- Cold front detection
+- Severe weather warnings
+- Winter weather monitoring
+- Frost protection alerts
 
-Deploy Your Project Locally
-===========================
+The current threshold of -10.0°C is specifically chosen to:
+- Capture major temperature drops
+- Monitor severe winter conditions
+- Track significant weather pattern changes
+- Provide early warning for extreme cold events
 
-1. Start Airflow on your local machine by running 'astro dev start'.
+## Architecture
 
-This command will spin up 4 Docker containers on your machine, each for a different Airflow component:
+The project supports two deployment modes:
 
-- Postgres: Airflow's Metadata Database
-- Webserver: The Airflow component responsible for rendering the Airflow UI
-- Scheduler: The Airflow component responsible for monitoring and triggering tasks
-- Triggerer: The Airflow component responsible for triggering deferred tasks
+### 1. Local Development (Astro CLI)
+- Uses Docker Compose under the hood
+- Managed through `astro` commands
+- Configuration in `airflow_settings.yaml`
+- Easy local development and testing
 
-2. Verify that all 4 Docker containers were created by running 'docker ps'.
+### 2. Kubernetes Deployment
+Located in the `k8s/` directory:
+- `configmap.yaml`: Environment variables and Airflow configuration
+- `airflow.yaml`: Airflow webserver and scheduler deployments
+- `postgres.yaml`: PostgreSQL database deployment with persistent storage
+- `redis.yaml`: Redis for Celery executor
+- `dags-configmap.yaml`: DAG configurations
+- `deploy.sh`: Deployment automation script
 
-Note: Running 'astro dev start' will start your project with the Airflow Webserver exposed at port 8080 and Postgres exposed at port 5432. If you already have either of those ports allocated, you can either [stop your existing Docker containers or change the port](https://www.astronomer.io/docs/astro/cli/troubleshoot-locally#ports-are-not-available-for-my-local-airflow-webserver).
+## Prerequisites
 
-3. Access the Airflow UI for your local Airflow project. To do so, go to http://localhost:8080/ and log in with 'admin' for both your Username and Password.
+### Local Development
+1. Astro CLI
+2. Docker
+3. Python 3.x
 
-You should also be able to access your Postgres Database at 'localhost:5432/postgres'.
+### Kubernetes Deployment
+1. Kubernetes cluster (minikube for local testing)
+2. kubectl
+3. Docker
 
-Deploy Your Project to Astronomer
-=================================
+## Setup Instructions
 
-If you have an Astronomer account, pushing code to a Deployment on Astronomer is simple. For deploying instructions, refer to Astronomer documentation: https://www.astronomer.io/docs/astro/deploy-code/
+### Local Development
+```bash
+# Initialize project
+astro dev init
 
-Contact
-=======
+# Start the project
+astro dev start
 
-The Astronomer CLI is maintained with love by the Astronomer team. To report a bug or suggest a change, reach out to our support.
+# Access Airflow UI
+open http://localhost:8080
+```
+
+### Kubernetes Deployment
+```bash
+# Navigate to k8s directory
+cd k8s
+
+# Make deploy script executable
+chmod +x deploy.sh
+
+# Deploy to Kubernetes
+./deploy.sh
+```
+
+## Project Structure
+```
+.
+├── dags/
+│   └── etlweather.py       # Main DAG file
+├── k8s/                    # Kubernetes manifests
+│   ├── airflow.yaml
+│   ├── configmap.yaml
+│   ├── dags-configmap.yaml
+│   ├── deploy.sh
+│   ├── postgres.yaml
+│   └── redis.yaml
+├── airflow_settings.yaml   # Local development settings
+├── Dockerfile             # Custom Airflow image
+└── README.md
+```
+
+## DAG Configuration
+- Schedule: Hourly checks
+- Poke Interval: Every 5 minutes
+- Timeout: 1 hour
+- Catchup: Disabled
+
+## Environment Variables
+- `LATITUDE`: 62.8966
+- `LONGITUDE`: 27.6786
+- `TEMP_THRESHOLD`: -10.0
+- `API_CONN_ID`: 'open_meteo_api'
+- `POSTGRES_CONN_ID`: 'postgres_default'
+
+## Database Schema
+- Automatic table creation
+- Stores weather parameters with timestamps
+- Tracks historical weather changes
+
+## Deployment Configuration
+
+### Setting Up Kubernetes Secrets
+Before deploying, you need to:
+
+1. Copy the template files:
+```bash
+cp k8s/configmap.template.yaml k8s/configmap.yaml
+```
+
+2. Set your environment variables in configmap.yaml:
+- POSTGRES_PASSWORD
+- AIRFLOW_SECRET_KEY
+
+3. Never commit the actual configmap.yaml file with real credentials
+
+### Environment Variables
+Create a `.env` file in the k8s directory with:
+```bash
+POSTGRES_PASSWORD=your_secure_password
+AIRFLOW_SECRET_KEY=your_secret_key
+```
+
+The deploy.sh script will use these variables to populate your configuration.
+
+## Deployment Notes
+
+### Local (Astro)
+- Uses local Docker containers
+- Easy development and testing
+- Configuration through `airflow_settings.yaml`
+
+### Kubernetes
+- Scalable production deployment
+- Persistent storage for PostgreSQL
+- Celery executor with Redis
+- LoadBalancer service for web UI access
+
+## Monitoring and Maintenance
+
+### Local
+```bash
+# View logs
+astro dev logs
+
+# Stop the project
+astro dev stop
+```
+
+### Kubernetes
+```bash
+# View pod status
+kubectl get pods -n weather-etl
+
+# View logs
+kubectl logs -n weather-etl deployment/airflow-webserver
+```
+
+## Security Considerations
+- Sensitive data managed through Kubernetes secrets
+- API credentials handled securely
+- Database credentials managed through environment variables
+
+## Contributing
+1. Fork the repository
+2. Create a feature branch
+3. Commit changes
+4. Create a pull request
+
+## License
+[MIT License](LICENSE)

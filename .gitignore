@@ -1,3 +1,4 @@
+# Existing entries
 .git
 .env
 .DS_Store
@@ -9,3 +10,8 @@ airflow-webserver.pid
 webserver_config.py
 airflow.cfg
 airflow.db
+
+# Kubernetes secrets and configs
+k8s/configmap.yaml
+k8s/*.secret.yaml
+k8s/.env

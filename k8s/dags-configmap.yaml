@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: airflow-dags
+data:
+  etlweather.py: |
+    from airflow import DAG
+    from airflow.providers.http.hooks.http import HttpHook
+    from airflow.providers.postgres.hooks.postgres import PostgresHook
+    from airflow.decorators import task
+    from airflow.utils.dates import days_ago
+    from airflow.sensors.python import PythonSensor
+    from airflow.datasets import Dataset
+    import requests
+    import json
+    from datetime import datetime
+
+    # Configuration from environment variables
+    LATITUDE = os.getenv('LATITUDE', '62.8966')
+    LONGITUDE = os.getenv('LONGITUDE', '27.6786')
+    TEMP_THRESHOLD = float(os.getenv('TEMP_THRESHOLD', '1.0'))
+    
+    # Rest of your DAG code...

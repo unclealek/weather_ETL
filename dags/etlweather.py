@@ -14,7 +14,7 @@ LATITUDE = '62.8966'
 LONGITUDE = '27.6786'
 POSTGRES_CONN_ID = 'postgres_default'
 API_CONN_ID = 'open_meteo_api'
-TEMP_THRESHOLD = 1.0  # Temperature change threshold in Celsius
+TEMP_THRESHOLD = -10.0  # Temperature change threshold in Celsius
 
 weather_dataset = Dataset('weather_data')
 
